@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
+
 	//"github.com/MikhailMishutkin/Test_MediaSoft/internal/usecases"
 	"github.com/gorilla/mux"
 )
@@ -14,7 +15,7 @@ type PersonHandler struct {
 }
 type PersonManager interface {
 	CreatePerson(c *domain.Person)
-	ViewPersonsListAll() []*domain.Person
+	ViewPersonsListAll() []byte
 	UpdatePerson()
 	DeletePerson()
 }
@@ -35,27 +36,23 @@ func (s *PersonHandler) RegisterPH(router *mux.Router) {
 	router.HandleFunc("/deleteperson", s.DeletePersonHandler).Methods("POST")
 }
 
-//...
+// создаёт запись о человеке
 func (h *PersonHandler) CreatePersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var p *domain.Person
 	_ = json.NewDecoder(r.Body).Decode(&p)
 
 	h.service.CreatePerson(p)
-	//fmt.Println(data)
+
 	json.NewEncoder(w).Encode(p)
-
-	//fmt.Fprint(w, p)
-
-	//w.Write([]byte("create person"))
 }
 
-///????
+/// отображает список людей
 func (u *PersonHandler) ListPersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	frSt := u.service.ViewPersonsListAll()
-	json.NewEncoder(w).Encode(frSt)
-	//w.WriteHeader(200)
+	fromSt := u.service.ViewPersonsListAll()
+	w.Write(fromSt)
+
 }
 
 //???????

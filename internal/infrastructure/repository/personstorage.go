@@ -2,15 +2,13 @@ package repository
 
 import (
 	_ "github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
 )
 
 type PersonRepository struct {
 	store *Store
-	//config *Config
-	//db *sql.DB
-	//A []*domain.Person  //test
 }
 
 func NewPersonRepository(store *Store) *PersonRepository {
@@ -36,8 +34,21 @@ func (r *PersonRepository) MakePerson(p *domain.Person) (*domain.Person, error) 
 
 }
 
-func (r *PersonRepository) GetList() []*domain.Person {
-	return nil
+func (r *PersonRepository) GetList() (jsonData []byte, err error) {
+	logger := logrus.New()
+	logger.Trace("Try to get list of persons")
+
+	q := `
+	SELECT json_agg(s) FROM (
+		SELECT id, person_name, surname, year_of_birth, groupname
+		from persons 
+	) s;`
+	if err := r.store.db.QueryRow(q).Scan(&jsonData); err != nil {
+		logger.Printf("Error GetList of persons: %s", err)
+		return nil, err
+	}
+
+	return jsonData, nil
 }
 
 func (r *PersonRepository) GetListAll() {

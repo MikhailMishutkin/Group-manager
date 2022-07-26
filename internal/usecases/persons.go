@@ -5,6 +5,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
 )
@@ -22,7 +23,7 @@ type PersonRepository interface {
 	UpdatePerson()
 	DeletePerson()
 	GetListAll()
-	GetList() []*domain.Person
+	GetList() ([]byte, error)
 }
 
 func NewPersonManage(r PersonRepository) *PersonManage {
@@ -46,8 +47,13 @@ func (pm *PersonManage) CreatePerson(c *domain.Person) {
 }
 
 // вывод списка людей общий
-func (pm *PersonManage) ViewPersonsListAll() []*domain.Person {
-	return pm.repo.GetList()
+func (pm *PersonManage) ViewPersonsListAll() []byte {
+	js, err := pm.repo.GetList()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return js
 }
 
 // 	list, err := uc.repo.GetListAll(ctx)
