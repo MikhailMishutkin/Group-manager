@@ -1,0 +1,12 @@
+bind_addr = ":8080"
+log_level = "debug"
+[data]
+host = "localhost"
+port= 5432
+user= "postgres"
+password= "1Vfcmrf1"
+dbname= "testMS"
+#sslmode=disable  
+
+
+
