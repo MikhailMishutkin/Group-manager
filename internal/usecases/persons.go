@@ -20,8 +20,8 @@ type PersonManage struct {
 
 type PersonRepository interface {
 	MakePerson(p *domain.Person) (*domain.Person, error)
-	UpdatePerson()
-	DeletePerson()
+	UpdatePerson(id int, gn string)
+	DeletePerson(id int)
 	GetListAll()
 	GetList() ([]byte, error)
 }
@@ -34,16 +34,6 @@ func NewPersonManage(r PersonRepository) *PersonManage {
 func (pm *PersonManage) CreatePerson(c *domain.Person) {
 	fmt.Println(c)
 	pm.repo.MakePerson(c)
-	// person, err := pm.repo.MakePerson()
-	// if err != nil {
-	// 	return domain.Person{}, fmt.Errorf("error to make a new person in usecase: %w", err)
-	// }
-
-	// err = uc.repo.MakePerson(context.Background(), person)
-	// if err != nil {
-	// 	return domain.Person{}, fmt.Errorf("error to make a new person in repo : %w", err)
-	// }
-	// return person, nil
 }
 
 // вывод списка людей общий
@@ -73,10 +63,12 @@ func (pm *PersonManage) ViewPersonsList(ctx context.Context) {
 }
 
 //доделать
-func (m *PersonManage) UpdatePerson() {
-	return
+func (pm *PersonManage) UpdatePerson(p *domain.Person) {
+
+	pm.repo.UpdatePerson(p.ID, p.GroupName)
 }
 
-func (m *PersonManage) DeletePerson() {
+func (pm *PersonManage) DeletePerson(p *domain.Person) {
+	pm.repo.DeletePerson(p.ID)
 	return
 }

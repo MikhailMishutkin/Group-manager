@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
@@ -16,8 +17,8 @@ type PersonHandler struct {
 type PersonManager interface {
 	CreatePerson(c *domain.Person)
 	ViewPersonsListAll() []byte
-	UpdatePerson()
-	DeletePerson()
+	UpdatePerson(p *domain.Person)
+	DeletePerson(p *domain.Person)
 }
 
 //
@@ -32,15 +33,20 @@ func (s *PersonHandler) RegisterPH(router *mux.Router) {
 	// п. 4 здесь или в группах??????????
 	router.HandleFunc("/listperson", s.ListPersonHandler).Methods("GET")
 	router.HandleFunc("/listperson/{groupid}", s.ListPersonWithSubHandler).Methods("GET")
-	router.HandleFunc("/updateperson/{personid}", s.UpdatePersonHandler).Methods("PUT")
-	router.HandleFunc("/deleteperson", s.DeletePersonHandler).Methods("POST")
+	router.HandleFunc("/updateperson", s.UpdatePersonHandler).Methods("PUT")
+	router.HandleFunc("/deleteperson", s.DeletePersonHandler).Methods("DELETE")
 }
 
 // создаёт запись о человеке
 func (h *PersonHandler) CreatePersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var p *domain.Person
-	_ = json.NewDecoder(r.Body).Decode(&p)
+	//_ = json.NewDecoder(r.Body).Decode(&p)
+	err := json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Fatal("user data error", err)
+	}
 
 	h.service.CreatePerson(p)
 
@@ -61,10 +67,27 @@ func (u *PersonHandler) ListPersonWithSubHandler(w http.ResponseWriter, r *http.
 }
 
 func (u *PersonHandler) UpdatePersonHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
+	w.Header().Set("Content-Type", "application/json")
+	var p *domain.Person
+	err := json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Fatal("user data error", err)
+	}
+	u.service.UpdatePerson(p)
+	json.NewEncoder(w).Encode(p)
 }
 
 func (u *PersonHandler) DeletePersonHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var p *domain.Person
+	err := json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Fatal("user data error", err)
+	}
+	u.service.DeletePerson(p)
+	json.NewEncoder(w).Encode(p)
 	w.WriteHeader(200)
 }
 
