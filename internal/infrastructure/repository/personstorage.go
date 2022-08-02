@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"log"
 
 	_ "github.com/lib/pq"
@@ -23,17 +24,45 @@ func NewPersonRepository(store *Store) *PersonRepository {
 // Create Person
 
 func (r *PersonRepository) MakePerson(p *domain.Person) (*domain.Person, error) {
-	if err := r.store.db.QueryRow(
-		"INSERT INTO persons (person_name, surname, year_of_birth, groupname) VALUES ($1, $2, $3, $4) RETURNING id",
-		p.Name,
-		p.Surname,
-		p.YearOfBirth,
-		p.GroupName,
-	).Scan(&p.ID); err != nil {
+	r.logger = logrus.New()
+	var gs []string
+	var s string
+	//извлекаем значения существующих групп
+	rows, err := r.store.db.Query("SELECT groupname FROM groups")
+	if err != nil {
+		r.logger.Printf("Error to get groupnames from db: %s", err)
 		return nil, err
 	}
+	defer rows.Close()
+	//складываем группы в массив
+	for rows.Next() {
+		if err := rows.Scan(&s); err != nil {
+			return p, err
+		}
+		gs = append(gs, s)
+	}
+	fmt.Print(gs)
+	// проверяем существование группы в бд
+	for _, v := range gs {
+		if p.GroupName == v {
+			// если группа существует, то добавляем пользователя
+			if err := r.store.db.QueryRow(
+				"INSERT INTO persons (person_name, surname, year_of_birth, groupname) VALUES ($1, $2, $3, $4) RETURNING id",
+				p.Name,
+				p.Surname,
+				p.YearOfBirth,
+				p.GroupName,
+			).Scan(&p.ID); err != nil {
+				return nil, err
+			}
+			return p, nil
+		} else {
+			continue
+		}
+	}
+	err = fmt.Errorf("no such group, try again")
 
-	return p, nil
+	return p, err
 
 }
 
@@ -42,7 +71,7 @@ func (r *PersonRepository) GetList() (jsonData []byte, err error) {
 	r.logger = logrus.New()
 	q := `
 	SELECT json_agg(s) FROM (
-		SELECT id, person_name, surname, year_of_birth, groupname
+		SELECT id, person_name, surname
 		from persons 
 	) s;`
 	if err := r.store.db.QueryRow(q).Scan(&jsonData); err != nil {

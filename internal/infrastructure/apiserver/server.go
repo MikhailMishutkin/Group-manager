@@ -35,6 +35,12 @@ func newServer(store repository.Storer) *server {
 	useCase := usecases.NewPersonManage(repository)
 	c := adapters.NewUserHandler(useCase)
 	c.RegisterPH(s.router)
+
+	repoGr := store.Group()
+	useCaseGr := usecases.NewGroupManage(repoGr)
+	cGr := adapters.NewGroupHandler(useCaseGr)
+	cGr.RegisterGH(s.router)
+
 	s.logger.Info("starting api server")
 	return s
 }

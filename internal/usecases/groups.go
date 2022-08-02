@@ -1,5 +1,11 @@
 package usecases
 
+import (
+	"fmt"
+
+	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
+)
+
 //import "github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
 
 //usecase struct
@@ -9,7 +15,7 @@ type GroupManage struct {
 }
 
 type GroupRepository interface {
-	MakeGroup()
+	MakeGroup(g *domain.Group) (*domain.Group, error)
 	UpdateGroup()
 	DeleteGroup()
 	GetListAll()
@@ -20,16 +26,21 @@ func NewGroupManage(r GroupRepository) *GroupManage {
 	return &GroupManage{repo: r}
 }
 
-func (g *GroupManage) MakeGroup() {
-	g.repo.MakeGroup()
+func (gm *GroupManage) CreateGroup(g *domain.Group) {
+	fmt.Println(g)
+	gm.repo.MakeGroup(g)
 }
 
-func (g *GroupManage) UpdateGroup() {
-	g.repo.DeleteGroup()
+func (gm *GroupManage) ListGroup() {
+
 }
 
-func (g *GroupManage) DeleteGroup() {
-	g.repo.DeleteGroup()
+func (gm *GroupManage) UpdateGroup() {
+	gm.repo.DeleteGroup()
+}
+
+func (gm *GroupManage) DeleteGroup() {
+	gm.repo.DeleteGroup()
 
 }
 

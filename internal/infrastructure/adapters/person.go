@@ -11,34 +11,52 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func JSONError(httpcode int, code, msg string, w http.ResponseWriter) {
+	type Error struct {
+		Code    *string `json:"code,omitempty"`
+		Message *string `json:"message,omitempty"`
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(httpcode)
+	json.NewEncoder(w).Encode(
+		Error{
+			Code:    &code,
+			Message: &msg,
+		},
+	)
+}
+
 type PersonHandler struct {
 	service PersonManager
 }
+
+// методы в юзкейсе
 type PersonManager interface {
-	CreatePerson(c *domain.Person)
+	CreatePerson(c *domain.Person) error
 	ViewPersonsListAll() []byte
 	UpdatePerson(p *domain.Person)
 	DeletePerson(p *domain.Person)
 }
 
-//
-
-// методы в юзкейсе
-
+//...
 func NewUserHandler(pm PersonManager) *PersonHandler {
 	return &PersonHandler{service: pm}
 }
+
+//...
 func (s *PersonHandler) RegisterPH(router *mux.Router) {
 	router.HandleFunc("/createperson", s.CreatePersonHandler).Methods("POST")
 	// п. 4 здесь или в группах??????????
 	router.HandleFunc("/listperson", s.ListPersonHandler).Methods("GET")
-	router.HandleFunc("/listperson/{groupid}", s.ListPersonWithSubHandler).Methods("GET")
+	router.HandleFunc("/listpersonws", s.ListPersonWithSubHandler).Methods("GET")
 	router.HandleFunc("/updateperson", s.UpdatePersonHandler).Methods("PUT")
 	router.HandleFunc("/deleteperson", s.DeletePersonHandler).Methods("DELETE")
 }
 
 // создаёт запись о человеке
-func (h *PersonHandler) CreatePersonHandler(w http.ResponseWriter, r *http.Request) {
+func (u *PersonHandler) CreatePersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var p *domain.Person
 	//_ = json.NewDecoder(r.Body).Decode(&p)
@@ -48,9 +66,13 @@ func (h *PersonHandler) CreatePersonHandler(w http.ResponseWriter, r *http.Reque
 		log.Fatal("user data error", err)
 	}
 
-	h.service.CreatePerson(p)
+	err = u.service.CreatePerson(p)
 
-	json.NewEncoder(w).Encode(p)
+	if err != nil {
+		JSONError(406, "not acceptable", "no such group, try again", w)
+		return
+	}
+	//json.NewEncoder(w).Encode(byte(err))
 }
 
 /// отображает список людей

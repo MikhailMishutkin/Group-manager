@@ -5,3 +5,4 @@ CREATE TABLE persons (
     year_of_birth integer not null,
     groupname varchar not null
 );
+

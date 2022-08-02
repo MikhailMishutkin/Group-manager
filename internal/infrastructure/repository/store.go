@@ -27,10 +27,12 @@ type Data struct {
 type Store struct {
 	db               *sql.DB
 	personRepository *PersonRepository
+	groupRepository  *GroupRepository
 }
 
 type Storer interface {
 	Person() usecases.PersonRepository
+	Group() usecases.GroupRepository
 }
 
 func New(db *sql.DB) *Store {
@@ -50,6 +52,17 @@ func (s *Store) Person() usecases.PersonRepository {
 	return s.personRepository
 }
 
+func (s *Store) Group() usecases.GroupRepository {
+	if s.groupRepository == nil {
+		s.groupRepository = &GroupRepository{
+			store: s,
+		}
+		return s.groupRepository
+	}
+
+	return s.groupRepository
+}
+
 func (s *PersonRepository) Open() error {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -66,6 +79,29 @@ func (s *PersonRepository) Open() error {
 	s.store.db = db
 
 	return nil
+}
+
+func (s *GroupRepository) Open() error {
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		return err
+	}
+
+	if err := db.Ping(); err != nil {
+		return err
+	}
+
+	s.store.db = db
+
+	return nil
+}
+
+//Close
+func (s *GroupRepository) Close() {
+
 }
 
 //Close

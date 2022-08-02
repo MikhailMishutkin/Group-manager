@@ -4,7 +4,6 @@ package usecases
 //а что именно она делает
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
@@ -31,9 +30,10 @@ func NewPersonManage(r PersonRepository) *PersonManage {
 }
 
 //создание профиля человека
-func (pm *PersonManage) CreatePerson(c *domain.Person) {
-	fmt.Println(c)
-	pm.repo.MakePerson(c)
+func (pm *PersonManage) CreatePerson(c *domain.Person) error {
+	//fmt.Println(c)
+	_, err := pm.repo.MakePerson(c)
+	return err
 }
 
 // вывод списка людей общий
