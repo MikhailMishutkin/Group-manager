@@ -1,46 +1,60 @@
 package usecases
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
+	"github.com/sirupsen/logrus"
 )
-
-//import "github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
 
 //usecase struct
 type GroupManage struct {
-	repo GroupRepository
-	//webApi GroupWebApi
+	repo   GroupRepository
+	logger *logrus.Logger
 }
 
 type GroupRepository interface {
-	MakeGroup(g *domain.Group) (*domain.Group, error)
-	UpdateGroup()
-	DeleteGroup()
+	CreateGroup(g *domain.Group) error
+	CreateSubGroup(g *domain.Group) error
+	UpdateGroup(id int, gn string, sg bool, mg string) error
+	DeleteGroup(gn string) error
 	GetListAll()
-	GetList()
+	GetList() (jsonData []byte, err error)
 }
 
 func NewGroupManage(r GroupRepository) *GroupManage {
 	return &GroupManage{repo: r}
 }
 
-func (gm *GroupManage) CreateGroup(g *domain.Group) {
-	fmt.Println(g)
-	gm.repo.MakeGroup(g)
+func (gm *GroupManage) CreateGroup(g *domain.Group) error {
+	//fmt.Println(g)
+	if g.Subgroup {
+		err := gm.repo.CreateSubGroup(g)
+		return err
+	} else {
+		err := gm.repo.CreateGroup(g)
+		return err
+	}
 }
 
-func (gm *GroupManage) ListGroup() {
+func (gm *GroupManage) ListGroups() []byte {
+	js, err := gm.repo.GetList()
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	return js
 }
 
-func (gm *GroupManage) UpdateGroup() {
-	gm.repo.DeleteGroup()
+func (gm *GroupManage) UpdateGroup(g *domain.Group) error {
+	err := gm.repo.UpdateGroup(g.ID, g.GroupName, g.Subgroup, g.MotherGroup)
+	return err
 }
 
-func (gm *GroupManage) DeleteGroup() {
-	gm.repo.DeleteGroup()
+func (gm *GroupManage) DeleteGroup(g *domain.Group) error {
+
+	err := gm.repo.DeleteGroup(g.GroupName)
+	return err
 
 }
 

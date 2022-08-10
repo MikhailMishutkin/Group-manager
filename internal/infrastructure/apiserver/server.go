@@ -15,9 +15,8 @@ type server struct {
 	router *mux.Router
 	store  repository.Storer
 
-	ph  *adapters.PersonHandler
-	gh  *adapters.GroupHandler
-	sgh *adapters.SubGroupHandler
+	ph *adapters.PersonHandler
+	gh *adapters.GroupHandler
 }
 
 func newServer(store repository.Storer) *server {
@@ -26,9 +25,8 @@ func newServer(store repository.Storer) *server {
 		logger: logrus.New(),
 		store:  store,
 
-		ph:  &adapters.PersonHandler{},
-		gh:  &adapters.GroupHandler{},
-		sgh: &adapters.SubGroupHandler{},
+		ph: &adapters.PersonHandler{},
+		gh: &adapters.GroupHandler{},
 	}
 
 	repository := store.Person()

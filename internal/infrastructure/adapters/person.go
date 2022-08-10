@@ -11,23 +11,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func JSONError(httpcode int, code, msg string, w http.ResponseWriter) {
-	type Error struct {
-		Code    *string `json:"code,omitempty"`
-		Message *string `json:"message,omitempty"`
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(httpcode)
-	json.NewEncoder(w).Encode(
-		Error{
-			Code:    &code,
-			Message: &msg,
-		},
-	)
-}
-
 type PersonHandler struct {
 	service PersonManager
 }
@@ -36,8 +19,8 @@ type PersonHandler struct {
 type PersonManager interface {
 	CreatePerson(c *domain.Person) error
 	ViewPersonsListAll() []byte
-	UpdatePerson(p *domain.Person)
-	DeletePerson(p *domain.Person)
+	UpdatePerson(p *domain.Person) error
+	DeletePerson(p *domain.Person) error
 }
 
 //...
@@ -69,10 +52,10 @@ func (u *PersonHandler) CreatePersonHandler(w http.ResponseWriter, r *http.Reque
 	err = u.service.CreatePerson(p)
 
 	if err != nil {
-		JSONError(406, "not acceptable", "no such group, try again", w)
+		JSONError(406, "not acceptable", err.Error(), w)
 		return
 	}
-	//json.NewEncoder(w).Encode(byte(err))
+	json.NewEncoder(w).Encode(err)
 }
 
 /// отображает список людей
@@ -88,6 +71,7 @@ func (u *PersonHandler) ListPersonWithSubHandler(w http.ResponseWriter, r *http.
 	w.WriteHeader(200)
 }
 
+//...
 func (u *PersonHandler) UpdatePersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var p *domain.Person
@@ -96,10 +80,16 @@ func (u *PersonHandler) UpdatePersonHandler(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(400)
 		log.Fatal("user data error", err)
 	}
-	u.service.UpdatePerson(p)
-	json.NewEncoder(w).Encode(p)
+
+	err = u.service.UpdatePerson(p)
+	if err != nil {
+		JSONError(406, "not acceptable", err.Error(), w)
+		return
+	}
+	json.NewEncoder(w).Encode(err)
 }
 
+//...
 func (u *PersonHandler) DeletePersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var p *domain.Person
@@ -108,8 +98,12 @@ func (u *PersonHandler) DeletePersonHandler(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(400)
 		log.Fatal("user data error", err)
 	}
-	u.service.DeletePerson(p)
-	json.NewEncoder(w).Encode(p)
+	err = u.service.DeletePerson(p)
+	if err != nil {
+		JSONError(406, "not acceptable", err.Error(), w)
+		return
+	}
+	json.NewEncoder(w).Encode(err)
 	w.WriteHeader(200)
 }
 

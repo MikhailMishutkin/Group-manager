@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
+	"github.com/sirupsen/logrus"
 )
 
 // type PersonManager interface {
@@ -14,13 +15,14 @@ import (
 // }
 
 type PersonManage struct {
-	repo PersonRepository
+	repo   PersonRepository
+	logger *logrus.Logger
 }
 
 type PersonRepository interface {
-	MakePerson(p *domain.Person) (*domain.Person, error)
-	UpdatePerson(id int, gn string)
-	DeletePerson(id int)
+	CreatePerson(p *domain.Person) (*domain.Person, error)
+	UpdatePerson(id int, gn string) error
+	DeletePerson(id int) error
 	GetListAll()
 	GetList() ([]byte, error)
 }
@@ -32,12 +34,13 @@ func NewPersonManage(r PersonRepository) *PersonManage {
 //создание профиля человека
 func (pm *PersonManage) CreatePerson(c *domain.Person) error {
 	//fmt.Println(c)
-	_, err := pm.repo.MakePerson(c)
+	_, err := pm.repo.CreatePerson(c)
 	return err
 }
 
 // вывод списка людей общий
 func (pm *PersonManage) ViewPersonsListAll() []byte {
+	pm
 	js, err := pm.repo.GetList()
 	if err != nil {
 		log.Fatal(err)
@@ -62,13 +65,15 @@ func (pm *PersonManage) ViewPersonsList(ctx context.Context) {
 	// return list, nil
 }
 
-//доделать
-func (pm *PersonManage) UpdatePerson(p *domain.Person) {
+//...
+func (pm *PersonManage) UpdatePerson(p *domain.Person) error {
 
-	pm.repo.UpdatePerson(p.ID, p.GroupName)
+	err := pm.repo.UpdatePerson(p.ID, p.GroupName)
+	return err
 }
 
-func (pm *PersonManage) DeletePerson(p *domain.Person) {
-	pm.repo.DeletePerson(p.ID)
-	return
+// ...
+func (pm *PersonManage) DeletePerson(p *domain.Person) error {
+	err := pm.repo.DeletePerson(p.ID)
+	return err
 }

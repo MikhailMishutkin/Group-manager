@@ -15,10 +15,10 @@ type GroupHandler struct {
 }
 
 type GroupManager interface {
-	CreateGroup(g *domain.Group)
-	UpdateGroup()
-	DeleteGroup()
-	ListGroup()
+	CreateGroup(g *domain.Group) error
+	UpdateGroup(g *domain.Group) error
+	DeleteGroup(g *domain.Group) error
+	ListGroups() []byte
 }
 
 func NewGroupHandler(g GroupManager) *GroupHandler {
@@ -45,21 +45,59 @@ func (gh *GroupHandler) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 		w.WriteHeader(400)
 		log.Fatal("user data error", err)
 	}
-	//fmt.Println(g)
-	gh.gm.CreateGroup(g)
 
-	json.NewEncoder(w).Encode(g)
+	err = gh.gm.CreateGroup(g)
+
+	if err != nil {
+		JSONError(406, "not acceptable", err.Error(), w)
+		return
+	}
+
+	json.NewEncoder(w).Encode(err)
 }
 
 func (gh *GroupHandler) ListGroupWSHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
-	w.Write([]byte("create group"))
+	w.Header().Set("Content-Type", "application/json")
+	list := gh.gm.ListGroups()
+	w.Write(list)
 }
 
 func (gh *GroupHandler) UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
-	gh.gm.UpdateGroup()
+	w.Header().Set("Content-Type", "application/json")
+	var g *domain.Group
+	err := json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Fatal("user data error", err)
+	}
+
+	err = gh.gm.UpdateGroup(g)
+
+	if err != nil {
+		JSONError(406, "not acceptable", err.Error(), w)
+		return
+	}
+
+	json.NewEncoder(w).Encode(err)
+
 }
 
 func (gh *GroupHandler) DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
-	gh.gm.DeleteGroup()
+	w.Header().Set("Content-Type", "application/json")
+	var g *domain.Group
+	err := json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Fatal("user data error", err)
+	}
+
+	err = gh.gm.DeleteGroup(g)
+
+	if err != nil {
+		JSONError(406, "not acceptable", err.Error(), w)
+		return
+	}
+
+	json.NewEncoder(w).Encode(err)
+
 }
