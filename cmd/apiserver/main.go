@@ -5,8 +5,7 @@ import (
 	"log"
 
 	"github.com/BurntSushi/toml"
-	"github.com/MikhailMishutkin/Test_MediaSoft/internal/infrastructure/apiserver"
-	//"github.com/MikhailMishutkin/Test_MediaSoft/internal/app/apiserver"
+	"github.com/MikhailMishutkin/Test_MediaSoft/internal/app/apiserver"
 )
 
 var (

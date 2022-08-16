@@ -7,10 +7,10 @@ import (
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
 
-	//"github.com/MikhailMishutkin/Test_MediaSoft/internal/usecases"
 	"github.com/gorilla/mux"
 )
 
+//структура с инъекцией юзкейса
 type PersonHandler struct {
 	service PersonManager
 }
@@ -23,17 +23,15 @@ type PersonManager interface {
 	DeletePerson(p *domain.Person) error
 }
 
-//...
+//конструктор
 func NewUserHandler(pm PersonManager) *PersonHandler {
 	return &PersonHandler{service: pm}
 }
 
-//...
+//регистрация API
 func (s *PersonHandler) RegisterPH(router *mux.Router) {
 	router.HandleFunc("/createperson", s.CreatePersonHandler).Methods("POST")
-	// п. 4 здесь или в группах??????????
 	router.HandleFunc("/listperson", s.ListPersonHandler).Methods("GET")
-	router.HandleFunc("/listpersonws", s.ListPersonWithSubHandler).Methods("GET")
 	router.HandleFunc("/updateperson", s.UpdatePersonHandler).Methods("PUT")
 	router.HandleFunc("/deleteperson", s.DeletePersonHandler).Methods("DELETE")
 }
@@ -42,7 +40,6 @@ func (s *PersonHandler) RegisterPH(router *mux.Router) {
 func (u *PersonHandler) CreatePersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var p *domain.Person
-	//_ = json.NewDecoder(r.Body).Decode(&p)
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
 		w.WriteHeader(400)
@@ -58,7 +55,7 @@ func (u *PersonHandler) CreatePersonHandler(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(err)
 }
 
-//...
+// обновляет запись о человеке
 func (u *PersonHandler) UpdatePersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var p *domain.Person
@@ -76,7 +73,7 @@ func (u *PersonHandler) UpdatePersonHandler(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(err)
 }
 
-//...
+// удаляет запись о человеке
 func (u *PersonHandler) DeletePersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var p *domain.Person
@@ -94,7 +91,8 @@ func (u *PersonHandler) DeletePersonHandler(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(200)
 }
 
-/// отображает список людей
+/// отображает список людей в определённой группе только привязанных к данной
+// и список людей со всеми дочерними группами
 func (u *PersonHandler) ListPersonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -107,9 +105,4 @@ func (u *PersonHandler) ListPersonHandler(w http.ResponseWriter, r *http.Request
 	list := u.service.ViewPersonsListAll(p)
 	w.Write(list)
 
-}
-
-//???????
-func (u *PersonHandler) ListPersonWithSubHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
 }

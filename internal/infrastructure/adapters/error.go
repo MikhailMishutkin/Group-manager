@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// обработка ошибки для вывода пользователю
 func JSONError(httpcode int, code, msg string, w http.ResponseWriter) {
 	type Error struct {
 		Code    *string `json:"code,omitempty"`

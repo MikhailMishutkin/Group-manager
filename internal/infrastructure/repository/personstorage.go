@@ -11,33 +11,33 @@ import (
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/domain"
 )
 
-//...
+//структура для вывода данных пользователю
 type listPerson struct {
 	Group     string           `json:"group"`
 	Persons   []*domain.Person `json:"persons"`
 	Subgroups []subgroups      `json:"subgroups"`
 }
 
-// ...
+// подструктура для вывода данных пользователю
 type subgroups struct {
 	Group   string           `json:"group"`
 	Persons []*domain.Person `json:"persons"`
 }
 
-// ...
+// структура с инъекцией хранилища
 type PersonRepository struct {
 	store  *Store
 	logger *logrus.Logger
 }
 
-// ...
+// конструктор
 func NewPersonRepository(store *Store) *PersonRepository {
 	return &PersonRepository{
 		store: store,
 	}
 }
 
-// Create Person
+// создаём запись о человеке
 func (r *PersonRepository) CreatePerson(p *domain.Person) (*domain.Person, error) {
 	r.logger = logrus.New()
 	var gs []string
@@ -88,7 +88,7 @@ func (r *PersonRepository) CreatePerson(p *domain.Person) (*domain.Person, error
 	return p, err
 }
 
-// update person's group
+// обновляем запись о человеке, можно обновить только группу
 func (r *PersonRepository) UpdatePerson(id int, gn string) error {
 	r.logger = logrus.New()
 	err := r.store.db.QueryRow("SELECT groupname FROM persons WHERE id = $1", id).Scan(&gn)
@@ -106,7 +106,7 @@ func (r *PersonRepository) UpdatePerson(id int, gn string) error {
 	return nil
 }
 
-// delete person from database
+// удаляем запись о человеке по id
 func (r *PersonRepository) DeletePerson(id int) error {
 	r.logger = logrus.New()
 	// используем queryrow чтобы просканировать группу в переменную
@@ -122,6 +122,7 @@ func (r *PersonRepository) DeletePerson(id int) error {
 		r.logger.Info("error to delete person: %s", err)
 		return err
 	}
+	// уменьшаем счётчик  людей в группе
 	r.store.db.QueryRow(
 		`UPDATE groups 
 		SET members = members - 1
@@ -130,16 +131,18 @@ func (r *PersonRepository) DeletePerson(id int) error {
 	return nil
 }
 
-// list all person in group
+// отображает список людей в определённой группе только привязанных к данной
+// и список людей со всеми дочерними группами
 func (r *PersonRepository) GetList(gn string) (jsonData []byte, err error) {
 	r.logger = logrus.New()
 	var l listPerson
 	var sub subgroups
 	var p *domain.Person
-
 	var n, sur string
 	var id, y int
+
 	q := "SELECT id, person_name, surname, year_of_birth FROM persons WHERE groupname = $1"
+	//извлекаем данные о людях в группе для группировки в структуру
 	rows, err := r.store.db.Query(q, gn)
 	if err != nil {
 		r.logger.Printf("Error to get person data from db: %s", err)
@@ -161,7 +164,7 @@ func (r *PersonRepository) GetList(gn string) (jsonData []byte, err error) {
 		}
 		l.Persons = append(l.Persons, p)
 	}
-
+	// извлекаем данные о подгруппах группы для групировки в структуру
 	rows, err = r.store.db.Query("SELECT groupname FROM groups WHERE mothergroup = $1", gn)
 	if err != nil {
 		r.logger.Printf("Error to get groupname from db: %s", err)
@@ -175,6 +178,7 @@ func (r *PersonRepository) GetList(gn string) (jsonData []byte, err error) {
 			r.logger.Printf("trouble with rows.Next: %s", err)
 			return nil, err
 		}
+		// извлекаем данные о людях в подгруппах для группировки в структуру
 		row, err := r.store.db.Query(q, s)
 		if err != nil {
 			r.logger.Printf("Error to get person data from db: %s", err)

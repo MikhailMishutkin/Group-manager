@@ -28,7 +28,7 @@ func newServer(store repository.Storer) *server {
 		ph: &adapters.PersonHandler{},
 		gh: &adapters.GroupHandler{},
 	}
-
+	// инициализация конструкторов с инъекциями
 	repository := store.Person()
 	useCase := usecases.NewPersonManage(repository)
 	c := adapters.NewUserHandler(useCase)

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	//"github.com/MikhailMishutkin/Test_MediaSoft/internal/infrastructure/adapters"
-
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/infrastructure/repository"
 	_ "github.com/lib/pq" // ...
 	"github.com/sirupsen/logrus"

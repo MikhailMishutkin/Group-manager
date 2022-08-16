@@ -160,7 +160,7 @@ func (gr *GroupRepository) UpdateGroup(id int, gn string, sg bool, mg string) er
 	return err
 }
 
-// удаление группы, нельзя удалить, если в группе есть участники
+// удаление группы, нельзя удалить, если в группе есть участники или подгруппы
 func (gr *GroupRepository) DeleteGroup(gn string) error {
 	gr.logger = logrus.New()
 	var q int
@@ -170,7 +170,7 @@ func (gr *GroupRepository) DeleteGroup(gn string) error {
 		gr.logger.Printf("Error to get groupname from db: %s", err)
 		return err
 	}
-
+	// проверка на участников
 	if q > 0 {
 		return errors.New("cannot delete, group has a members")
 	} else {
@@ -180,6 +180,7 @@ func (gr *GroupRepository) DeleteGroup(gn string) error {
 			return err
 		}
 	}
+	// проверка на подгруппы
 	var s string
 	if !b {
 		err := gr.store.db.QueryRow("SELECT groupname FROM groups WHERE mothergroup = $1", gn).Scan(&s)
@@ -202,7 +203,8 @@ func (gr *GroupRepository) DeleteGroup(gn string) error {
 	return nil
 }
 
-// ...
+// отображает список групп и количество участников в этой группе, как чисто в данной группе,
+//так и общее количество вместе с дочерними группами
 func (gr *GroupRepository) GetList() (jsonData []byte, err error) {
 	var s string
 	var l listGroups
@@ -264,7 +266,7 @@ func (gr *GroupRepository) GetList() (jsonData []byte, err error) {
 	return jsonData, nil
 }
 
-// ...
+// вспомогательная функция проверки существования группы в бд
 func checkGroupNamesExst(rows *sql.Rows, g *domain.Group) ([]string, error) {
 	logger := logrus.New()
 	var gs []string //массив с названиями групп
