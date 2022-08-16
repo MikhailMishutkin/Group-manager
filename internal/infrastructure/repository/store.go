@@ -16,6 +16,7 @@ const (
 	dbname   = "testMS"
 )
 
+// для конфига
 type Data struct {
 	Host     string `toml:"host"`
 	Port     int    `toml:"port"`
@@ -63,6 +64,7 @@ func (s *Store) Group() usecases.GroupRepository {
 	return s.groupRepository
 }
 
+// открываем хранилище записей о людях в группах
 func (s *PersonRepository) Open() error {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -81,6 +83,7 @@ func (s *PersonRepository) Open() error {
 	return nil
 }
 
+// открываем хранилище записей о группах и подгруппах
 func (s *GroupRepository) Open() error {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",

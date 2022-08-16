@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// ...
+// структура для вывода списка
 type listGroups struct {
 	Id        int    `json:"id"`
 	GroupName string `json:"group_name"`
@@ -18,20 +18,20 @@ type listGroups struct {
 	MembAll   int    `json:"members_in_total_with_subgroups"`
 }
 
-// ...
+// структура с инъекцией настроек хранилища
 type GroupRepository struct {
 	store  *Store
 	logger *logrus.Logger
 }
 
-// ...
+// конструктор
 func NewGroupRepository(store *Store) *GroupRepository {
 	return &GroupRepository{
 		store: store,
 	}
 }
 
-// ...
+// создаём группу
 func (gr *GroupRepository) CreateGroup(g *domain.Group) error {
 	gr.logger = logrus.New()
 
@@ -61,7 +61,7 @@ func (gr *GroupRepository) CreateGroup(g *domain.Group) error {
 	return err
 }
 
-// ...
+// создаём подгруппу
 func (gr *GroupRepository) CreateSubGroup(g *domain.Group) error {
 	gr.logger = logrus.New()
 	var gs []string //массив с названиями групп
@@ -160,11 +160,12 @@ func (gr *GroupRepository) UpdateGroup(id int, gn string, sg bool, mg string) er
 	return err
 }
 
-// ...
+// удаление группы, нельзя удалить, если в группе есть участники
 func (gr *GroupRepository) DeleteGroup(gn string) error {
 	gr.logger = logrus.New()
 	var q int
-	err := gr.store.db.QueryRow("SELECT members FROM groups WHERE groupname = $1", gn).Scan(&q)
+	var b bool
+	err := gr.store.db.QueryRow("SELECT members, subgroup FROM groups WHERE groupname = $1", gn).Scan(&q, &b)
 	if err != nil {
 		gr.logger.Printf("Error to get groupname from db: %s", err)
 		return err
@@ -175,8 +176,26 @@ func (gr *GroupRepository) DeleteGroup(gn string) error {
 	} else {
 		_, err = gr.store.db.Exec(`DELETE FROM groups where groupname = $1`, gn)
 		if err != nil {
-			gr.logger.Info("error to delete person: %s", err)
+			gr.logger.Info("error to delete group: %s", err)
 			return err
+		}
+	}
+	var s string
+	if !b {
+		err := gr.store.db.QueryRow("SELECT groupname FROM groups WHERE mothergroup = $1", gn).Scan(&s)
+		if err != nil {
+			gr.logger.Printf("Error to get groupname from db: %s", err)
+			return err
+		}
+		if len(s) > 0 {
+			return errors.New("cannot delete, group has a subgroup")
+		} else {
+			_, err = gr.store.db.Exec(`DELETE FROM groups where groupname = $1`, gn)
+			if err != nil {
+				gr.logger.Info("error to delete group: %s", err)
+				return err
+			}
+
 		}
 	}
 
