@@ -9,11 +9,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// ...
 type GroupHandler struct {
 	gm GroupManager
 	r  *mux.Router
 }
 
+// ...
 type GroupManager interface {
 	CreateGroup(g *domain.Group) error
 	UpdateGroup(g *domain.Group) error
@@ -21,10 +23,12 @@ type GroupManager interface {
 	ListGroups() []byte
 }
 
+// ...
 func NewGroupHandler(g GroupManager) *GroupHandler {
 	return &GroupHandler{gm: g}
 }
 
+// ...
 func (gh *GroupHandler) RegisterGH(router *mux.Router) {
 	router.HandleFunc("/creategroup", gh.CreateGroupHandler).Methods("POST")
 	router.HandleFunc("/listgroups", gh.ListGroupHandler).Methods("GET")
@@ -33,9 +37,7 @@ func (gh *GroupHandler) RegisterGH(router *mux.Router) {
 	router.HandleFunc("/deletegroup", gh.DeleteGroupHandler).Methods("DELETE")
 }
 
-func (gh *GroupHandler) ListGroupHandler(w http.ResponseWriter, r *http.Request) {
-}
-
+// ...
 func (gh *GroupHandler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var g *domain.Group
@@ -56,12 +58,7 @@ func (gh *GroupHandler) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(err)
 }
 
-func (gh *GroupHandler) ListGroupWSHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	list := gh.gm.ListGroups()
-	w.Write(list)
-}
-
+// ...
 func (gh *GroupHandler) UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var g *domain.Group
@@ -82,6 +79,7 @@ func (gh *GroupHandler) UpdateGroupHandler(w http.ResponseWriter, r *http.Reques
 
 }
 
+// ...
 func (gh *GroupHandler) DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var g *domain.Group
@@ -99,5 +97,17 @@ func (gh *GroupHandler) DeleteGroupHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	json.NewEncoder(w).Encode(err)
+
+}
+
+// ...
+func (gh *GroupHandler) ListGroupHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	list := gh.gm.ListGroups()
+	w.Write(list)
+}
+
+// ?????????
+func (gh *GroupHandler) ListGroupWSHandler(w http.ResponseWriter, r *http.Request) {
 
 }

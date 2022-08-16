@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -9,11 +10,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// ...
+type listGroups struct {
+	Id        int    `json:"id"`
+	GroupName string `json:"group_name"`
+	MembInG   int    `json:"members_in_group"`
+	MembAll   int    `json:"members_in_total_with_subgroups"`
+}
+
+// ...
 type GroupRepository struct {
 	store  *Store
 	logger *logrus.Logger
 }
 
+// ...
 func NewGroupRepository(store *Store) *GroupRepository {
 	return &GroupRepository{
 		store: store,
@@ -39,9 +50,10 @@ func (gr *GroupRepository) CreateGroup(g *domain.Group) error {
 
 	// создаем группу верхнего уровня
 	if err := gr.store.db.QueryRow(
-		"INSERT INTO groups (groupname, members) VALUES ($1, $2) RETURNING id",
+		"INSERT INTO groups (groupname, members, subgroup) VALUES ($1, $2, $3) RETURNING id",
 		g.GroupName,
 		g.Members,
+		g.Subgroup,
 	).Scan(&g.ID); err != nil {
 		return err
 	}
@@ -84,9 +96,10 @@ func (gr *GroupRepository) CreateSubGroup(g *domain.Group) error {
 		if g.MotherGroup == v {
 			// создаем подгруппу
 			if err := gr.store.db.QueryRow(
-				"INSERT INTO groups (groupname, members, mothergroup) VALUES ($1, $2, $3) RETURNING id",
+				"INSERT INTO groups (groupname, members, subgroup, mothergroup) VALUES ($1, $2, $3, $4) RETURNING id",
 				g.GroupName,
 				g.Members,
+				g.Subgroup,
 				g.MotherGroup,
 			).Scan(&g.ID); err != nil {
 				return err
@@ -101,22 +114,6 @@ func (gr *GroupRepository) CreateSubGroup(g *domain.Group) error {
 	err = fmt.Errorf("no such mothergroup exist")
 	gr.logger.Info(err)
 	return err
-}
-
-// TODO
-func (gr *GroupRepository) GetList() (jsonData []byte, err error) {
-	gr.logger = logrus.New()
-	q := `
-	SELECT json_agg(s) FROM (
-		SELECT groupname
-		from groups 
-	) s;`
-	if err := gr.store.db.QueryRow(q).Scan(&jsonData); err != nil {
-		gr.logger.Printf("Error GetList of persons: %s", err)
-		return nil, err
-	}
-	gr.logger.Tracef("Try to get list of persons", q)
-	return jsonData, nil
 }
 
 // обновление группы по id: можно поменять имя, если нет участников; можно поменять уровень вверх и вниз
@@ -136,6 +133,7 @@ func (gr *GroupRepository) UpdateGroup(id int, gn string, sg bool, mg string) er
 		return err
 	}
 
+	// TODO: прописать вариант отказа изменения уровня, если у группы есть подгруппы
 	switch {
 	case gn != name && q > 0:
 		return errors.New("cannot update name, group has a members")
@@ -146,13 +144,13 @@ func (gr *GroupRepository) UpdateGroup(id int, gn string, sg bool, mg string) er
 		}
 		return nil
 	case gn == name && sg:
-		_, err := gr.store.db.Exec(`UPDATE groups SET mothergroup = $2 WHERE id = $1`, id, mg)
+		_, err := gr.store.db.Exec(`UPDATE groups SET mothergroup = $2, subgroup = true WHERE id = $1`, id, mg)
 		if err != nil {
 			gr.logger.Infof("error to update group: %s", err)
 		}
 		return nil
 	case gn == name && !sg:
-		_, err := gr.store.db.Exec(`UPDATE groups SET mothergroup = $2 WHERE id = $1`, id, mg)
+		_, err := gr.store.db.Exec(`UPDATE groups SET mothergroup = $2, subgroup = false WHERE id = $1`, id, mg)
 		if err != nil {
 			gr.logger.Infof("error to update group: %s", err)
 		}
@@ -186,8 +184,65 @@ func (gr *GroupRepository) DeleteGroup(gn string) error {
 }
 
 // ...
-func (gr *GroupRepository) GetListAll() {
+func (gr *GroupRepository) GetList() (jsonData []byte, err error) {
+	var s string
+	var l listGroups
+	gr.logger = logrus.New()
 
+	// делаем выборку материнских групп из списка
+	rows, err := gr.store.db.Query("SELECT groupname FROM groups WHERE subgroup = false")
+	if err != nil {
+		gr.logger.Printf("Error to get groupnames from db: %s", err)
+		return nil, err
+	}
+	defer rows.Close()
+	// сканируем группу в s
+	var listAll []listGroups
+	for rows.Next() {
+		if err := rows.Scan(&s); err != nil {
+			gr.logger.Printf("trouble with rows.Next: %s", err)
+			return nil, err
+		}
+		//получаем id и количество участников группы
+		var id, m int
+		err = gr.store.db.QueryRow("SELECT id, members FROM groups WHERE groupname = $1", s).Scan(&id, &m)
+		if err != nil {
+			gr.logger.Printf("Error to get id and members from db: %s", err)
+			return nil, err
+		}
+		// делаем выборку количества участников из подгрупп
+		members, err := gr.store.db.Query("SELECT members FROM groups WHERE mothergroup = $1", s)
+		if err != nil {
+			gr.logger.Printf("Error to get groupnames from db: %s", err)
+			return nil, err
+		}
+		defer members.Close()
+		// суммируем участников подгрупп
+		var q, sumMemb int
+		for members.Next() {
+			if err := members.Scan(&q); err != nil {
+				gr.logger.Printf("trouble with rows.Next: %s", err)
+				return nil, err
+			}
+			sumMemb = sumMemb + q
+		}
+		sumMemb = sumMemb + m
+		// складываем полученные данные в структуру и сериализируем в json
+		l = listGroups{
+			Id:        id,
+			GroupName: s,
+			MembInG:   m,
+			MembAll:   sumMemb,
+		}
+		listAll = append(listAll, l)
+	}
+	jsonData, err = json.Marshal(listAll)
+	if err != nil {
+		gr.logger.Info("Error with marshaling to json", err)
+		return nil, err
+	}
+	//fmt.Println(string(jsonData))
+	return jsonData, nil
 }
 
 // ...
@@ -217,75 +272,3 @@ func checkGroupNamesExst(rows *sql.Rows, g *domain.Group) ([]string, error) {
 
 	return gs, nil
 }
-
-// //извлекаем значения существующих групп
-// if g.Subgroup {
-// 	rows, err := gr.store.db.Query("SELECT groupname FROM groups WHERE COLUMN mothergroup = $1", g.MotherGroup)
-// 	if err != nil {
-// 		gr.logger.Printf("Error to get groupnames from db: %s", err)
-// 		return nil
-// 	}
-// 	defer rows.Close()
-
-// 	//складываем группы в массив
-// 	for rows.Next() {
-// 		if err := rows.Scan(&s); err != nil {
-// 			gr.logger.Printf("trouble with rows.Next: %s", err)
-// 			return nil
-// 		}
-// 		gs = append(gs, s)
-// 	}
-// 	return gs
-// } else {
-// 	rows, err := gr.store.db.Query("SELECT groupname FROM groups")
-// 	if err != nil {
-// 		gr.logger.Printf("Error to get groupnames from db: %s", err)
-// 		return nil
-// 	}
-// 	defer rows.Close()
-// 	//складываем группы в массив
-// 	for rows.Next() {
-// 		if err := rows.Scan(&s); err != nil {
-// 			gr.logger.Printf("trouble with rows.Next: %s", err)
-// 			return nil
-// 		}
-// 		gs = append(gs, s)
-// 	}
-// 	return gs
-// }
-// //складываем группы в массив
-// for rows.Next() {
-// 	if err := rows.Scan(&s); err != nil {
-// 		return g, err
-// 	}
-// 	gs = append(gs, s)
-// }
-// // проверяем существование группы в бд
-// for _, v := range gs {
-// 	if g.GroupName == v {
-// 		err = fmt.Errorf("group is already exist")
-// 		return nil, err
-// 	} else {
-// 		continue
-// 	}
-// }
-
-// for _, v := range gs {
-// 	if g.MotherGroup == v {
-// 		for _, v := range gs {
-// 			if g.GroupName == v {
-// 				err := fmt.Errorf("group is already exist")
-// 				gr.logger.Error("group is already exist")
-// 				return err
-// 			} else {
-// 				continue
-// 			}
-// 		}
-// 		return nil
-// 	} else {
-// 		continue
-// 	}
-// }
-// err := fmt.Errorf("no such mothergroup exist")
-// gr.logger.Error("no such mothergroup exist")
-// return err
