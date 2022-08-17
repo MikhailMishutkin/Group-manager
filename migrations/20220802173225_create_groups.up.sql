@@ -1,6 +1,7 @@
 CREATE TABLE groups (
     id smallserial not null primary key,
     groupname varchar not null,
-    members varchar[],
-    subgroups varchar[]
+    subgroup boolean,
+    mothergroup varchar,
+    members integer not null       
 );

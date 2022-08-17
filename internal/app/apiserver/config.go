@@ -4,8 +4,8 @@ import "github.com/MikhailMishutkin/Test_MediaSoft/internal/infrastructure/repos
 
 type Config struct {
 	BindAddr string          `toml:"bind_addr"`
-	LogLevel string          `toml: "log_level"`
-	DBUrl    repository.Data `toml: "data"`
+	LogLevel string          `toml:"log_level"`
+	DBUrl    repository.Data `toml:"data"`
 }
 
 func NewConfig() *Config {

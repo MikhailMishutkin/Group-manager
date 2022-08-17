@@ -119,9 +119,9 @@ func (gr *GroupRepository) CreateSubGroup(g *domain.Group) error {
 // обновление группы по id: можно поменять имя, если нет участников; можно поменять уровень вверх и вниз
 func (gr *GroupRepository) UpdateGroup(id int, gn string, sg bool, mg string) error {
 	gr.logger = logrus.New()
-	var name string
+	var name1, name2 string
 	var q int
-	err := gr.store.db.QueryRow("SELECT groupname FROM groups WHERE id = $1", id).Scan(&name)
+	err := gr.store.db.QueryRow("SELECT groupname FROM groups WHERE id = $1", id).Scan(&name1)
 	if err != nil {
 		gr.logger.Printf("Error to get groupname from db: %s", err)
 		return err
@@ -129,27 +129,37 @@ func (gr *GroupRepository) UpdateGroup(id int, gn string, sg bool, mg string) er
 
 	err = gr.store.db.QueryRow("SELECT members FROM groups WHERE id = $1", id).Scan(&q)
 	if err != nil {
-		gr.logger.Printf("Error to get groupname from db: %s", err)
+		gr.logger.Printf("Error to get groupname from db (update gr): %s", err)
 		return err
 	}
 
-	// TODO: прописать вариант отказа изменения уровня, если у группы есть подгруппы
+	err = gr.store.db.QueryRow("SELECT groupname FROM groups WHERE mothergroup = $1", gn).Scan(&name2)
+	if err != nil {
+		gr.logger.Printf("Error to get groupname from db: %s", err)
+		//return err
+	}
+
 	switch {
-	case gn != name && q > 0:
+	case gn != name1 && q > 0:
 		return errors.New("cannot update name, group has a members")
-	case gn != name:
+	case gn != name1 && !sg:
+		if len(name2) > 0 {
+			return errors.New("cannot update name, group has subgroups")
+		}
+		fallthrough
+	case gn != name1:
 		_, err := gr.store.db.Exec(`UPDATE groups SET groupname = $2 WHERE id = $1`, id, gn)
 		if err != nil {
 			gr.logger.Infof("error to update group: %s", err)
 		}
 		return nil
-	case gn == name && sg:
+	case gn == name1 && sg:
 		_, err := gr.store.db.Exec(`UPDATE groups SET mothergroup = $2, subgroup = true WHERE id = $1`, id, mg)
 		if err != nil {
 			gr.logger.Infof("error to update group: %s", err)
 		}
 		return nil
-	case gn == name && !sg:
+	case gn == name1 && !sg:
 		_, err := gr.store.db.Exec(`UPDATE groups SET mothergroup = $2, subgroup = false WHERE id = $1`, id, mg)
 		if err != nil {
 			gr.logger.Infof("error to update group: %s", err)
