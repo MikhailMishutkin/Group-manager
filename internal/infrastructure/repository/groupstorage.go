@@ -136,7 +136,7 @@ func (gr *GroupRepository) UpdateGroup(id int, gn string, sg bool, mg string) er
 	err = gr.store.db.QueryRow("SELECT groupname FROM groups WHERE mothergroup = $1", gn).Scan(&name2)
 	if err != nil {
 		gr.logger.Printf("Error to get groupname from db: %s", err)
-		//return err
+		//return err ошибка не возвращается, обрабатывается в switch
 	}
 
 	switch {

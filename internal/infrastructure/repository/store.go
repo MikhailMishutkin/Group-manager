@@ -2,28 +2,10 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/usecases"
 	_ "github.com/lib/pq"
 )
-
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "1Vfcmrf1"
-	dbname   = "testMS"
-)
-
-// для конфига
-type Data struct {
-	Host     string `toml:"host"`
-	Port     int    `toml:"port"`
-	User     string `toml:"user"`
-	Password string `toml:"password"`
-	DBname   string `toml:"dbname"`
-}
 
 type Store struct {
 	db               *sql.DB
@@ -62,52 +44,4 @@ func (s *Store) Group() usecases.GroupRepository {
 	}
 
 	return s.groupRepository
-}
-
-// открываем хранилище записей о людях в группах
-func (s *PersonRepository) Open() error {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		return err
-	}
-
-	if err := db.Ping(); err != nil {
-		return err
-	}
-
-	s.store.db = db
-
-	return nil
-}
-
-// открываем хранилище записей о группах и подгруппах
-func (s *GroupRepository) Open() error {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		return err
-	}
-
-	if err := db.Ping(); err != nil {
-		return err
-	}
-
-	s.store.db = db
-
-	return nil
-}
-
-//Close
-func (s *GroupRepository) Close() {
-
-}
-
-//Close
-func (s *PersonRepository) Close() {
-
 }

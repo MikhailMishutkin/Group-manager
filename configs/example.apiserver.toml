@@ -1,0 +1,9 @@
+bind_addr = ":8080"
+log_level = "debug"
+
+[database]
+Host     = "localhost"
+Port     = 5432
+User     = "user"
+Password = "pass"
+NameDB   = "databasename"

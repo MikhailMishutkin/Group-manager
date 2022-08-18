@@ -5,20 +5,23 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/BurntSushi/toml"
+	"github.com/MikhailMishutkin/Test_MediaSoft/internal/config"
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/infrastructure/repository"
+
 	_ "github.com/lib/pq" // ...
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "1Vfcmrf1"
-	dbname   = "testMS"
-)
+// const (
+// 	host     = "localhost"
+// 	port     = 5432
+// 	user     = "postgres"
+// 	password = "1Vfcmrf1"
+// 	dbname   = "testMS"
+// )
 
-func Start(config *Config) error {
+func Start(config *config.Config) error {
 
 	db, err := newDB()
 	if err != nil {
@@ -32,9 +35,13 @@ func Start(config *Config) error {
 }
 
 func newDB() (*sql.DB, error) {
+	var conn *config.Config
+	if _, err := toml.DecodeFile("configs/apiserver.toml", &conn); err != nil {
+		return nil, err
+	}
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		conn.DB.Host, conn.DB.Port, conn.DB.User, conn.DB.Password, conn.DB.NameDB)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return nil, err
@@ -46,7 +53,7 @@ func newDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func configureLogger(config *Config) error {
+func configureLogger(config *config.Config) error {
 	level, err := logrus.ParseLevel(config.LogLevel)
 	if err != nil {
 		return err
