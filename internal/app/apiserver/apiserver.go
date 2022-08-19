@@ -13,14 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// const (
-// 	host     = "localhost"
-// 	port     = 5432
-// 	user     = "postgres"
-// 	password = "1Vfcmrf1"
-// 	dbname   = "testMS"
-// )
-
 func Start(config *config.Config) error {
 
 	db, err := newDB()
