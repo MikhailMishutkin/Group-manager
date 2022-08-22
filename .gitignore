@@ -1,1 +1,7 @@
 apiserver.toml
+.vscode
+api
+apiserver
+LICENSE
+Makefile
+migrate
