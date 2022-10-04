@@ -3,14 +3,14 @@ package apiserver
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 
-	"github.com/BurntSushi/toml"
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/config"
 	"github.com/MikhailMishutkin/Test_MediaSoft/internal/infrastructure/repository"
+	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq" // ...
-	"github.com/sirupsen/logrus"
 )
 
 func Start(config *config.Config) error {
@@ -27,13 +27,17 @@ func Start(config *config.Config) error {
 }
 
 func newDB() (*sql.DB, error) {
-	var conn *config.Config
-	if _, err := toml.DecodeFile("configs/apiserver.toml", &conn); err != nil {
-		return nil, err
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
 	}
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+
+	c := config.NewConfig()
+
+	fmt.Println(c.Host)
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		conn.DB.Host, conn.DB.Port, conn.DB.User, conn.DB.Password, conn.DB.NameDB)
+		c.Host, c.Port, c.User, c.Password, c.NameDB)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return nil, err
@@ -43,15 +47,4 @@ func newDB() (*sql.DB, error) {
 		return nil, err
 	}
 	return db, nil
-}
-
-func configureLogger(config *config.Config) error {
-	level, err := logrus.ParseLevel(config.LogLevel)
-	if err != nil {
-		return err
-	}
-
-	logrus.SetLevel(level)
-
-	return nil
 }

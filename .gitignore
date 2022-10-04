@@ -5,3 +5,4 @@ apiserver
 LICENSE
 Makefile
 migrate
+.env
