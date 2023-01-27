@@ -1,3 +1,0 @@
-BEGIN;
-DELETE FROM groups;
-COMMIT;

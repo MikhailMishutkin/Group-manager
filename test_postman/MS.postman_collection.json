@@ -137,7 +137,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"groupname\": \"testgroup2\",\r\n    \"group_members\": 0,\r\n    \"subgroup\": false\r\n}",
+							"raw": "{\r\n    \"groupname\": \"testgroup\",\r\n    \"group_members\": 0,\r\n    \"subgroup\": false\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"

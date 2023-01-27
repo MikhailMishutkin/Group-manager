@@ -1,14 +1,11 @@
 package config
 
-type Config struct {
-	BindAddr string   `toml:"bind_addr"`
-	LogLevel string   `toml:"log_level"`
-	DB       Database `toml:"database"`
-}
+import "os"
 
-type Database struct {
+type Config struct {
+	BindAddr string
 	Host     string
-	Port     int
+	Port     string
 	User     string
 	Password string
 	NameDB   string
@@ -16,7 +13,11 @@ type Database struct {
 
 func NewConfig() *Config {
 	return &Config{
-		BindAddr: ":8080",
-		LogLevel: "debug",
+		BindAddr: os.Getenv("BindAddr"),
+		Host:     os.Getenv("Host"),
+		Port:     os.Getenv("Port"),
+		User:     os.Getenv("User"),
+		Password: os.Getenv("Password"),
+		NameDB:   os.Getenv("NameDB"),
 	}
 }
